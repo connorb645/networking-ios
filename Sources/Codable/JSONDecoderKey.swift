@@ -9,7 +9,7 @@ import Foundation
 import Dependencies
 
 enum JSONDecoderKey: DependencyKey {
-    public static var liveValue: JSONDecoder = JSONDecoder()
+    public static let liveValue: JSONDecoder = JSONDecoder()
 }
 
 extension DependencyValues {
