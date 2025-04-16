@@ -15,6 +15,7 @@ public enum NetworkClientError: Error {
 
 public struct NetworkClient: Sendable {
     @Dependency(\.jsonDecoder) var jsonDecoder
+    @Dependency(\.jsonEncoder) var jsonEncoder
 
     let urlSession: LoggerURLSessionProtocol
 
@@ -36,6 +37,73 @@ public struct NetworkClient: Sendable {
         try httpResponse.checkOKStatus()
         return try jsonDecoder.decode(T.self, from: data)
     }
+
+    public func POST<T: Decodable, B: Encodable>(
+        url: String,
+        body: B,
+        headers: [String: String]? = nil,
+        queryParameters: [String: String]? = nil
+    ) async throws -> T {
+        guard let url = URL(string: url).withQueryParameters(queryParameters) else { throw NetworkClientError.invalidUrl }
+
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        urlRequest = urlRequest.withHeaders(headers)
+
+        let encodedData = try jsonEncoder.encode(body)
+        urlRequest.httpBody = encodedData
+
+        let (data, response) = try await urlSession.data(for: urlRequest)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLSessionError.failedHTTPResponseCast
+        }
+        try httpResponse.checkOKStatus()
+        return try jsonDecoder.decode(T.self, from: data)
+    }
+
+    public func PUT<T: Decodable, B: Encodable>(
+        url: String,
+        body: B,
+        headers: [String: String]? = nil,
+        queryParameters: [String: String]? = nil
+    ) async throws -> T {
+        guard let url = URL(string: url).withQueryParameters(queryParameters) else { throw NetworkClientError.invalidUrl }
+
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "PUT"
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        urlRequest = urlRequest.withHeaders(headers)
+
+        let encodedData = try jsonEncoder.encode(body)
+        urlRequest.httpBody = encodedData
+
+        let (data, response) = try await urlSession.data(for: urlRequest)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLSessionError.failedHTTPResponseCast
+        }
+        try httpResponse.checkOKStatus()
+        return try jsonDecoder.decode(T.self, from: data)
+    }
+
+    public func DELETE<T: Decodable>(
+        url: String,
+        headers: [String: String]? = nil,
+        queryParameters: [String: String]? = nil
+    ) async throws -> T {
+        guard let url = URL(string: url).withQueryParameters(queryParameters) else { throw NetworkClientError.invalidUrl }
+
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "DELETE"
+        urlRequest = urlRequest.withHeaders(headers)
+
+        let (data, response) = try await urlSession.data(for: urlRequest)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLSessionError.failedHTTPResponseCast
+        }
+        try httpResponse.checkOKStatus()
+        return try jsonDecoder.decode(T.self, from: data)
+    }
 }
 
 public enum NetworkClientKey: DependencyKey, Sendable {
@@ -43,10 +111,10 @@ public enum NetworkClientKey: DependencyKey, Sendable {
 }
 
 public extension DependencyValues {
-  var networkClient: NetworkClient {
-    get { self[NetworkClientKey.self] }
-    set { self[NetworkClientKey.self] = newValue }
-  }
+    var networkClient: NetworkClient {
+        get { self[NetworkClientKey.self] }
+        set { self[NetworkClientKey.self] = newValue }
+    }
 }
 
 
