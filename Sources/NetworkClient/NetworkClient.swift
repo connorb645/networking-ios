@@ -31,7 +31,10 @@ extension ResponseDetails {
                 let errorBody = try JSONDecoder().decode(ErrorResponseContract.self, from: self.data)
                 throw NetworkClientError.badResponse(errorBody.code, errorBody.message)
             } catch {
-                throw NetworkClientError.badResponse(self.httpResponse.statusCode)
+                guard error is NetworkClientError else {
+                    throw NetworkClientError.badResponse(self.httpResponse.statusCode)
+                }
+                throw error
             }
         }
     }
