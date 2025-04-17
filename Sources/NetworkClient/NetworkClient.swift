@@ -11,6 +11,30 @@ import Logging
 
 public enum NetworkClientError: Error {
     case invalidUrl
+    case badResponse(Int, String)
+    case badResponse(Int)
+}
+
+struct ResponseDetails {
+    let httpResponse: HTTPURLResponse
+    let data: Data
+}
+
+extension ResponseDetails {
+    func checkOKStatus() throws {
+        guard (200...299) ~= self.httpResponse.statusCode else {
+            struct ErrorResponseContract: Decodable {
+                let code: Int
+                let message: String
+            }
+            do {
+                let errorBody = try JSONDecoder().decode(ErrorResponseContract.self, from: self.data)
+                throw NetworkClientError.badResponse(errorBody.code, errorBody.message)
+            } catch {
+                throw NetworkClientError.badResponse(self.httpResponse.statusCode)
+            }
+        }
+    }
 }
 
 public struct NetworkClient: Sendable {
@@ -34,7 +58,7 @@ public struct NetworkClient: Sendable {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw URLSessionError.failedHTTPResponseCast
         }
-        try httpResponse.checkOKStatus()
+        try ResponseDetails(httpResponse: httpResponse, data: data).checkOKStatus()
         return try jsonDecoder.decode(T.self, from: data)
     }
 
@@ -58,7 +82,7 @@ public struct NetworkClient: Sendable {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw URLSessionError.failedHTTPResponseCast
         }
-        try httpResponse.checkOKStatus()
+        try ResponseDetails(httpResponse: httpResponse, data: data).checkOKStatus()
         return try jsonDecoder.decode(T.self, from: data)
     }
 
@@ -82,7 +106,7 @@ public struct NetworkClient: Sendable {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw URLSessionError.failedHTTPResponseCast
         }
-        try httpResponse.checkOKStatus()
+        try ResponseDetails(httpResponse: httpResponse, data: data).checkOKStatus()
         return try jsonDecoder.decode(T.self, from: data)
     }
 
@@ -101,7 +125,7 @@ public struct NetworkClient: Sendable {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw URLSessionError.failedHTTPResponseCast
         }
-        try httpResponse.checkOKStatus()
+        try ResponseDetails(httpResponse: httpResponse, data: data).checkOKStatus()
         return try jsonDecoder.decode(T.self, from: data)
     }
 }
