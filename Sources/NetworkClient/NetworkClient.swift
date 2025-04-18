@@ -11,8 +11,8 @@ import Logging
 
 public enum NetworkClientError: Error {
     case invalidUrl
-    case badResponse(Int, String)
-    case badResponse(Int)
+    case badResponseCodeAndError(Int, String)
+    case badResponseCode(Int)
 }
 
 struct ResponseDetails {
@@ -29,10 +29,10 @@ extension ResponseDetails {
             }
             do {
                 let errorBody = try JSONDecoder().decode(ErrorResponseContract.self, from: self.data)
-                throw NetworkClientError.badResponse(errorBody.code, errorBody.message)
+                throw NetworkClientError.badResponseCodeAndError(errorBody.code, errorBody.message)
             } catch {
                 guard error is NetworkClientError else {
-                    throw NetworkClientError.badResponse(self.httpResponse.statusCode)
+                    throw NetworkClientError.badResponseCode(self.httpResponse.statusCode)
                 }
                 throw error
             }
