@@ -48,6 +48,8 @@ public struct NetworkClient: Sendable {
 
     init() {
         urlSession = URLSessionProvider.session
+        jsonDecoder.keyDecodingStrategy = .convertFromSnakeCase
+        jsonEncoder.keyEncodingStrategy = .convertToSnakeCase
     }
 
     public func GET<T: Decodable>(
