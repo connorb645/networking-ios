@@ -13,6 +13,7 @@ public enum NetworkClientError: Error {
     case invalidUrl
     case badResponseCodeAndError(Int, String)
     case badResponseCode(Int)
+    case noData
 }
 
 struct ResponseDetails {
@@ -64,7 +65,10 @@ public struct NetworkClient: Sendable {
             throw URLSessionError.failedHTTPResponseCast
         }
         try ResponseDetails(httpResponse: httpResponse, data: data).checkOKStatus()
-        return try jsonDecoder.decode(T.self, from: data)
+        guard let unwrapped = try jsonDecoder.decode(OptionalDecodable<T>.self, from: data).value else {
+            throw NetworkClientError.noData
+        }
+        return unwrapped
     }
 
     public func POST<T: Decodable, B: Encodable>(
@@ -88,7 +92,10 @@ public struct NetworkClient: Sendable {
             throw URLSessionError.failedHTTPResponseCast
         }
         try ResponseDetails(httpResponse: httpResponse, data: data).checkOKStatus()
-        return try jsonDecoder.decode(T.self, from: data)
+        guard let unwrapped = try jsonDecoder.decode(OptionalDecodable<T>.self, from: data).value else {
+            throw NetworkClientError.noData
+        }
+        return unwrapped
     }
 
     public func PUT<T: Decodable, B: Encodable>(
@@ -112,7 +119,10 @@ public struct NetworkClient: Sendable {
             throw URLSessionError.failedHTTPResponseCast
         }
         try ResponseDetails(httpResponse: httpResponse, data: data).checkOKStatus()
-        return try jsonDecoder.decode(T.self, from: data)
+        guard let unwrapped = try jsonDecoder.decode(OptionalDecodable<T>.self, from: data).value else {
+            throw NetworkClientError.noData
+        }
+        return unwrapped
     }
 
     public func DELETE<T: Decodable>(
@@ -131,7 +141,10 @@ public struct NetworkClient: Sendable {
             throw URLSessionError.failedHTTPResponseCast
         }
         try ResponseDetails(httpResponse: httpResponse, data: data).checkOKStatus()
-        return try jsonDecoder.decode(T.self, from: data)
+        guard let unwrapped = try jsonDecoder.decode(OptionalDecodable<T>.self, from: data).value else {
+            throw NetworkClientError.noData
+        }
+        return unwrapped
     }
 }
 
@@ -165,5 +178,14 @@ extension URLRequest {
             mutableSelf.setValue(value, forHTTPHeaderField: key)
         }
         return mutableSelf
+    }
+}
+
+struct OptionalDecodable<T: Decodable>: Decodable {
+    let value: T?
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        value = try? container.decode(T.self)
     }
 }
