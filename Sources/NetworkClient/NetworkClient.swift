@@ -53,13 +53,20 @@ public struct NetworkClient: Sendable {
         jsonEncoder.keyEncodingStrategy = .convertToSnakeCase
     }
 
-    public func GET<T: Decodable>(
+    public func GET<T: Decodable, B: Encodable>(
         url: String,
         headers: [String: String]? = nil,
-        queryParameters: [String: String]? = nil
+        queryParameters: [String: String]? = nil,
+        body: B? = nil
     ) async throws -> T {
         guard let url = URL(string: url).withQueryParameters(queryParameters) else { throw NetworkClientError.invalidUrl }
-        let urlRequest = URLRequest(url: url).withHeaders(headers)
+        var urlRequest = URLRequest(url: url).withHeaders(headers)
+        urlRequest.httpMethod = "GET"
+        if let body {
+            urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            let encodedData = try jsonEncoder.encode(body)
+            urlRequest.httpBody = encodedData
+        }
         let (data, response) = try await urlSession.data(for: urlRequest)
         guard let httpResponse = response as? HTTPURLResponse else {
             throw URLSessionError.failedHTTPResponseCast
