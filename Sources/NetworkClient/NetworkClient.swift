@@ -99,6 +99,29 @@ public struct NetworkClient: Sendable {
         return unwrapped
     }
 
+    public func POST<T: Decodable>(
+        url: String,
+        headers: [String: String]? = nil,
+        queryParameters: [String: String]? = nil
+    ) async throws -> T {
+        guard let url = URL(string: url).withQueryParameters(queryParameters) else { throw NetworkClientError.invalidUrl }
+
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        urlRequest = urlRequest.withHeaders(headers)
+
+        let (data, response) = try await urlSession.data(for: urlRequest)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLSessionError.failedHTTPResponseCast
+        }
+        try ResponseDetails(httpResponse: httpResponse, data: data).checkOKStatus()
+        guard let unwrapped = try jsonDecoder.decode(OptionalDecodable<T>.self, from: data).value else {
+            throw NetworkClientError.noData
+        }
+        return unwrapped
+    }
+
     public func PUT<T: Decodable, B: Encodable>(
         url: String,
         body: B,
