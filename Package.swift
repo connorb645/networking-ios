@@ -13,7 +13,7 @@ let package = Package(
             targets: ["Networking"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/pointfreeco/swift-dependencies.git", from: "1.6.0"),
+        .package(url: "https://github.com/pointfreeco/swift-dependencies.git", exact: "1.6.0"),
         .package(url: "https://github.com/connorb645/logging-ios.git", branch: "main")
     ],
     targets: [
