@@ -14,7 +14,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/pointfreeco/swift-dependencies.git", exact: "1.6.0"),
-        .package(url: "https://github.com/connorb645/logging-ios.git", exact: "0.0.4")
+        .package(url: "https://github.com/connorb645/logging-ios.git", exact: "0.0.5"))
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
