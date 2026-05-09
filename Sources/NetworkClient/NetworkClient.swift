@@ -122,6 +122,29 @@ public struct NetworkClient: Sendable {
         return unwrapped
     }
 
+    public func POST<B: Encodable>(
+        url: String,
+        body: B,
+        headers: [String: String]? = nil,
+        queryParameters: [String: String]? = nil
+    ) async throws {
+        guard let url = URL(string: url).withQueryParameters(queryParameters) else { throw NetworkClientError.invalidUrl }
+
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        urlRequest = urlRequest.withHeaders(headers)
+
+        let encodedData = try jsonEncoder.encode(body)
+        urlRequest.httpBody = encodedData
+
+        let (data, response) = try await urlSession.data(for: urlRequest)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLSessionError.failedHTTPResponseCast
+        }
+        try ResponseDetails(httpResponse: httpResponse, data: data).checkOKStatus()
+    }
+
     public func PUT<T: Decodable, B: Encodable>(
         url: String,
         body: B,
@@ -149,6 +172,29 @@ public struct NetworkClient: Sendable {
         return unwrapped
     }
 
+    public func PUT<B: Encodable>(
+        url: String,
+        body: B,
+        headers: [String: String]? = nil,
+        queryParameters: [String: String]? = nil
+    ) async throws {
+        guard let url = URL(string: url).withQueryParameters(queryParameters) else { throw NetworkClientError.invalidUrl }
+
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "PUT"
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        urlRequest = urlRequest.withHeaders(headers)
+
+        let encodedData = try jsonEncoder.encode(body)
+        urlRequest.httpBody = encodedData
+
+        let (data, response) = try await urlSession.data(for: urlRequest)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLSessionError.failedHTTPResponseCast
+        }
+        try ResponseDetails(httpResponse: httpResponse, data: data).checkOKStatus()
+    }
+
     public func DELETE<T: Decodable>(
         url: String,
         headers: [String: String]? = nil,
@@ -169,6 +215,24 @@ public struct NetworkClient: Sendable {
             throw NetworkClientError.noData
         }
         return unwrapped
+    }
+
+    public func DELETE(
+        url: String,
+        headers: [String: String]? = nil,
+        queryParameters: [String: String]? = nil
+    ) async throws {
+        guard let url = URL(string: url).withQueryParameters(queryParameters) else { throw NetworkClientError.invalidUrl }
+
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "DELETE"
+        urlRequest = urlRequest.withHeaders(headers)
+
+        let (data, response) = try await urlSession.data(for: urlRequest)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLSessionError.failedHTTPResponseCast
+        }
+        try ResponseDetails(httpResponse: httpResponse, data: data).checkOKStatus()
     }
 }
 
